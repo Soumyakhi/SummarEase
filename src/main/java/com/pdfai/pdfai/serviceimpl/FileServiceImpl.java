@@ -131,6 +131,7 @@ public class FileServiceImpl implements FileService {
                 return fileUtils.highlightRed(pdfFile,hashSet);
             }
             catch (IOException e){
+                System.out.println(e);
                 return null;
             }
         } catch (IOException e) {
