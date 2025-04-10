@@ -38,8 +38,8 @@ public class LoginServiceImpl implements LoginService {
             params.add("code", code.getCodeStr());
             params.add("client_id", clientId);
             params.add("client_secret", clientSecret);
-            params.add("redirect_uri", "https://developers.google.com/oauthplayground");
-            // params.add("redirect_uri", "http://localhost:5173/login");
+            //params.add("redirect_uri", "https://developers.google.com/oauthplayground");
+            params.add("redirect_uri", "http://localhost:5173");
             params.add("grant_type", "authorization_code");
 
             HttpHeaders headers = new HttpHeaders();

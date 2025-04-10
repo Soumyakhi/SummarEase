@@ -1,9 +1,13 @@
 package com.pdfai.pdfai.controller;
+import com.pdfai.pdfai.dto.EditorDeltaJSON;
 import com.pdfai.pdfai.dto.FileDTO;
+import com.pdfai.pdfai.service.CollabService;
 import com.pdfai.pdfai.service.FileService;
 import com.pdfai.pdfai.service.LogoutService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -23,5 +27,21 @@ public class FilteredController {
         logout.logoutUser(request);
         return "Logout successful";
     }
-
+    @Autowired
+    private CollabService collabService;
+    @GetMapping("/fetchContent/{uuid}")
+    public ResponseEntity<?> fetchContent(@PathVariable String uuid){
+        String deltaJson=collabService.fetchDeltaJson(uuid);
+        if(deltaJson==null){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(deltaJson,HttpStatus.OK);
+    }
+    @PostMapping("/updateContent")
+    public ResponseEntity<?> updateContent(@RequestBody EditorDeltaJSON editorDeltaJSON){
+        if(!collabService.updateDoc(editorDeltaJSON)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
