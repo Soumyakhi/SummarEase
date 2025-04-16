@@ -45,11 +45,5 @@ public class AuthController {
     public File getResKeyWords(FileDTO fileDTO){
         return fileService.getResultKeyWords(fileDTO.getPdfFile());
     }
-    @Autowired
-    private AddEditor addEditor;
-    @PostMapping("/createEditor")
-    public boolean createEditor(@RequestBody TextContent textContent){
-        System.out.println(textContent.getEditorId());
-        return addEditor.addEditor(textContent.getEditorId(),textContent.getDeltaJson());
-    }
+
 }

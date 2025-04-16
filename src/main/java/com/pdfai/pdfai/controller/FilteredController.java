@@ -1,6 +1,8 @@
 package com.pdfai.pdfai.controller;
 import com.pdfai.pdfai.dto.EditorDeltaJSON;
 import com.pdfai.pdfai.dto.FileDTO;
+import com.pdfai.pdfai.entity.TextContent;
+import com.pdfai.pdfai.service.AddEditor;
 import com.pdfai.pdfai.service.CollabService;
 import com.pdfai.pdfai.service.FileService;
 import com.pdfai.pdfai.service.LogoutService;
@@ -43,5 +45,17 @@ public class FilteredController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+    @Autowired
+    private AddEditor addEditor;
+    @PostMapping("/createEditor")
+    public boolean createEditor(@RequestBody TextContent textContent){
+        System.out.println(textContent.getEditorId());
+        return addEditor.addEditor(textContent.getEditorId(),textContent.getDeltaJson());
+    }
+    @PostMapping("/setFullContent")
+    public String setFullContent(@RequestBody EditorDeltaJSON editorDeltaJSON){
+        collabService.addFullDoc(editorDeltaJSON);
+        return "Success";
     }
 }

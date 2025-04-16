@@ -23,7 +23,11 @@ public class CollabServiceImpl implements CollabService {
         if(textRepo.findByEditorId(editorDeltaJSON.getUuid())==null){
             return false;
         }
-        updateDoc(editorDeltaJSON);
+        myWebSocketHandler.sendUpdate(editorDeltaJSON);
         return true;
+    }
+    @Override
+    public void addFullDoc(EditorDeltaJSON editorDeltaJSON) {
+        myWebSocketHandler.setEditorContent(editorDeltaJSON);
     }
 }

@@ -3,7 +3,6 @@ package com.pdfai.pdfai.util;
 import com.pdfai.pdfai.dto.EditorDeltaJSON;
 import com.pdfai.pdfai.entity.TextContent;
 import com.pdfai.pdfai.repository.TextRepo;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -20,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MyWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, Set<WebSocketSession>> groupSessions = new ConcurrentHashMap<>();
     private final Map<String,String> editorContent = new ConcurrentHashMap<>();
+    private final Map<String,String> versionMap = new ConcurrentHashMap<>();
     @Autowired
     JwtUtil jwtUtil;
     @Override
@@ -33,6 +33,7 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
             if(!editorContent.containsKey(uuid)){
                 System.out.println("putting content to hashmap");
                 editorContent.put(uuid, textRepo.findByEditorId(uuid).getDeltaJson());
+                versionMap.put(uuid, editorContent.get(uuid));
             }
         } else {
             session.close(CloseStatus.NOT_ACCEPTABLE);
@@ -54,15 +55,19 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
             }
         }
     }
-    public void sendUpdate(String uuid, EditorDeltaJSON editorDeltaJSON) {
-        Set<WebSocketSession> groupSessionSet = groupSessions.getOrDefault(uuid, new HashSet<>());
-        for (WebSocketSession session : groupSessionSet) {
-            if (session.isOpen()) {
-                try {
-                    editorContent.put(uuid, editorDeltaJSON.getFullDoc());
-                    session.sendMessage(new TextMessage(editorDeltaJSON.getUpdateDoc()));
-                } catch (IOException e) {
-                    e.printStackTrace();
+    public void sendUpdate(EditorDeltaJSON editorDeltaJSON) {
+        Set<WebSocketSession> groupSessionSet = groupSessions.getOrDefault(editorDeltaJSON.getUuid(), new HashSet<>());
+        if(this.editorContent.get(editorDeltaJSON.getUuid()).equals(editorDeltaJSON.getPrevDoc())){
+            editorContent.put(editorDeltaJSON.getUuid(), editorDeltaJSON.getFullDoc());
+            for (WebSocketSession session : groupSessionSet) {
+                System.out.println(this.editorContent.get(editorDeltaJSON.getUuid()));
+                System.out.println(editorDeltaJSON.getFullDoc());
+                if (session.isOpen() ) {
+                    try {
+                        session.sendMessage(new TextMessage(editorDeltaJSON.getUpdateDoc()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -100,5 +105,8 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         catch (Exception e) {
             return null;
         }
+    }
+    public void setEditorContent(EditorDeltaJSON editorDeltaJSON) {
+        editorContent.put(editorDeltaJSON.getUuid(),editorDeltaJSON.getFullDoc());
     }
 }

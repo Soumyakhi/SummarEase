@@ -4,6 +4,13 @@ public class EditorDeltaJSON {
     private String fullDoc;
     private String updateDoc;
     private String uuid;
+    private String prevDoc;
+    public String getPrevDoc() {
+        return this.prevDoc;
+    }
+    public void setPrevDoc(String prevDoc) {
+        this.prevDoc = prevDoc;
+    }
     public String getFullDoc() {
         return fullDoc;
     }

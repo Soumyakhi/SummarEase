@@ -6,4 +6,5 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface CollabService {
     public String fetchDeltaJson(String uuid);
     public boolean updateDoc(EditorDeltaJSON editorDeltaJSON);
+    public void addFullDoc(EditorDeltaJSON editorDeltaJSON);
 }
