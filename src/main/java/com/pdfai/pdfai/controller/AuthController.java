@@ -2,15 +2,12 @@ package com.pdfai.pdfai.controller;
 import com.pdfai.pdfai.dto.Code;
 import com.pdfai.pdfai.dto.FileDTO;
 import com.pdfai.pdfai.dto.LoginInfoDTO;
-import com.pdfai.pdfai.entity.TextContent;
-import com.pdfai.pdfai.service.AddEditor;
 import com.pdfai.pdfai.service.FileService;
 import com.pdfai.pdfai.service.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.File;
 
 @CrossOrigin

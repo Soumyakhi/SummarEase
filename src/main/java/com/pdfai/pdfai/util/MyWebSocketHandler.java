@@ -1,5 +1,7 @@
 package com.pdfai.pdfai.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pdfai.pdfai.dto.EditorDeltaJSON;
 import com.pdfai.pdfai.entity.TextContent;
 import com.pdfai.pdfai.repository.TextRepo;
@@ -14,6 +16,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class MyWebSocketHandler extends TextWebSocketHandler {
@@ -22,6 +25,8 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
     private final Map<String,String> versionMap = new ConcurrentHashMap<>();
     @Autowired
     JwtUtil jwtUtil;
+    @Autowired
+    private ObjectMapper objectMapper;
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Map<String, Object> attributes = session.getAttributes();
@@ -31,9 +36,9 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
             groupSessions.computeIfAbsent(uuid, k -> new HashSet<>()).add(session);
             System.out.println("User " + userId + " connected to room " + uuid);
             if(!editorContent.containsKey(uuid)){
-                System.out.println("putting content to hashmap");
+                System.out.println("putting content to hashmap by ws");
                 editorContent.put(uuid, textRepo.findByEditorId(uuid).getDeltaJson());
-                versionMap.put(uuid, editorContent.get(uuid));
+                versionMap.put(uuid, UUID.randomUUID().toString());
             }
         } else {
             session.close(CloseStatus.NOT_ACCEPTABLE);
@@ -57,14 +62,25 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
     }
     public void sendUpdate(EditorDeltaJSON editorDeltaJSON) {
         Set<WebSocketSession> groupSessionSet = groupSessions.getOrDefault(editorDeltaJSON.getUuid(), new HashSet<>());
-        if(this.editorContent.get(editorDeltaJSON.getUuid()).equals(editorDeltaJSON.getPrevDoc())){
+        if(editorDeltaJSON.getVersion().equals(this.versionMap.get(editorDeltaJSON.getUuid()))){
             editorContent.put(editorDeltaJSON.getUuid(), editorDeltaJSON.getFullDoc());
+            String version=UUID.randomUUID().toString();
+            System.out.println(this.editorContent.get(editorDeltaJSON.getUuid()));
+            System.out.println(editorDeltaJSON.getFullDoc());
+            editorDeltaJSON.setVersion(version);
+            editorDeltaJSON.setFullDoc("");
+            String jsonString;
+            try {
+                 jsonString=objectMapper.writeValueAsString(editorDeltaJSON);
+            }
+            catch (Exception e) {
+                jsonString=editorDeltaJSON.getUpdateDoc();
+            }
+            versionMap.put(editorDeltaJSON.getUuid(), version);
             for (WebSocketSession session : groupSessionSet) {
-                System.out.println(this.editorContent.get(editorDeltaJSON.getUuid()));
-                System.out.println(editorDeltaJSON.getFullDoc());
                 if (session.isOpen() ) {
                     try {
-                        session.sendMessage(new TextMessage(editorDeltaJSON.getUpdateDoc()));
+                        session.sendMessage(new TextMessage(jsonString));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -91,20 +107,26 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         }
         System.out.println("User"+userId+" disconnected from group " + uuid);
     }
-    public String getEditorContent(String uuid) {
+    public EditorDeltaJSON getEditorContent(String uuid) {
+        EditorDeltaJSON editorDeltaJSON = new EditorDeltaJSON();
         if(editorContent.containsKey(uuid)) {
             System.out.println("fetched from hashmap");
-            return editorContent.get(uuid);
+            editorDeltaJSON.setFullDoc(editorContent.get(uuid));
+            editorDeltaJSON.setVersion(versionMap.get(uuid));
         }
         try {
             String content =textRepo.findByEditorId(uuid).getDeltaJson();
+            String versionId= UUID.randomUUID().toString();
             editorContent.put(uuid, content);
-            System.out.println("fetched from db");
-            return content;
+            versionMap.put(uuid, versionId);
+            editorDeltaJSON.setFullDoc(content);
+            editorDeltaJSON.setVersion(versionId);
         }
+
         catch (Exception e) {
             return null;
         }
+        return editorDeltaJSON;
     }
     public void setEditorContent(EditorDeltaJSON editorDeltaJSON) {
         editorContent.put(editorDeltaJSON.getUuid(),editorDeltaJSON.getFullDoc());

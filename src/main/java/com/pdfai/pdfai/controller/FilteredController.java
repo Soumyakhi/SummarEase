@@ -33,11 +33,11 @@ public class FilteredController {
     private CollabService collabService;
     @GetMapping("/fetchContent/{uuid}")
     public ResponseEntity<?> fetchContent(@PathVariable String uuid){
-        String deltaJson=collabService.fetchDeltaJson(uuid);
-        if(deltaJson==null){
+        EditorDeltaJSON editorDeltaJSON=collabService.fetchDeltaJson(uuid);
+        if(editorDeltaJSON==null){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(deltaJson,HttpStatus.OK);
+        return new ResponseEntity<>(editorDeltaJSON,HttpStatus.OK);
     }
     @PostMapping("/updateContent")
     public ResponseEntity<?> updateContent(@RequestBody EditorDeltaJSON editorDeltaJSON){

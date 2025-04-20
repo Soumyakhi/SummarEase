@@ -13,7 +13,7 @@ public class CollabServiceImpl implements CollabService {
     @Autowired
     MyWebSocketHandler myWebSocketHandler;
     @Override
-    public String fetchDeltaJson(String uuid) {
+    public EditorDeltaJSON fetchDeltaJson(String uuid) {
         return myWebSocketHandler.getEditorContent(uuid);
     }
     @Autowired
