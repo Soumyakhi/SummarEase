@@ -1,25 +1,33 @@
 package com.pdfai.pdfai.serviceimpl;
+import com.pdfai.pdfai.entity.GrammarFile;
+import com.pdfai.pdfai.entity.KeywordFile;
+import com.pdfai.pdfai.entity.SummaryFile;
+import com.pdfai.pdfai.repository.GrammarRepo;
+import com.pdfai.pdfai.repository.KeywordRepo;
+import com.pdfai.pdfai.repository.SummaryRepo;
 import com.pdfai.pdfai.service.FileService;
 import com.pdfai.pdfai.util.FileUtils;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType0Font;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import com.pdfai.pdfai.util.HashUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 @Service
 public class FileServiceImpl implements FileService {
     @Autowired
+    GrammarRepo grammarRepo;
+    @Autowired
     FileUtils fileUtils;
+    @Autowired
+    HashUtil hashUtil;
     @Override
     public File getResultGrammar(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -32,6 +40,12 @@ public class FileServiceImpl implements FileService {
         try {
             file.transferTo(pdfFile);
             String extractedText = fileUtils.extractTextFromPDF(pdfFile);
+            String hashText = hashUtil.getHash(extractedText);
+            GrammarFile grammarF = grammarRepo.findByFileHash(hashText);
+            if( grammarF!= null) {
+                System.out.println("retrieved from hash");
+                return new File(grammarF.getPath());
+            }
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://localhost:8000/grammar";
             HttpHeaders headers = new HttpHeaders();
@@ -44,8 +58,33 @@ public class FileServiceImpl implements FileService {
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 correctedText = (String) response.getBody().get("corrected");
             }
-            try{
-                return fileUtils.getResultantFile(correctedText);
+            try {
+                File resultFile = fileUtils.getResultantFile(correctedText); // already a valid .pdf
+
+
+                // Define target directory and filename
+                String currentDirectory = System.getProperty("user.dir");
+                String path = currentDirectory + "\\src\\main\\webapp\\results";
+                String fileName = hashText + ".pdf";
+
+                // Create the results directory if it doesn't exist
+                File folder = new File(path);
+                if (!folder.exists()) folder.mkdirs();
+
+                // Define the new destination file
+                File targetFile = new File(path + File.separator + fileName);
+
+                // Copy the file to the static directory with new name
+                Files.copy(resultFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                // Save info to DB
+                GrammarFile grammarFile = new GrammarFile();
+                grammarFile.setPath(targetFile.getAbsolutePath());
+                grammarFile.setFileHash(hashText);
+                grammarRepo.save(grammarFile);
+
+                return resultFile;
+
             }
             catch (IOException e){
                 return null;
@@ -55,7 +94,8 @@ public class FileServiceImpl implements FileService {
         }
 
     }
-
+    @Autowired
+    SummaryRepo summaryRepo;
     @Override
     public File getResultSummary(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -68,6 +108,12 @@ public class FileServiceImpl implements FileService {
         try {
             file.transferTo(pdfFile);
             String extractedText = fileUtils.extractTextFromPDF(pdfFile);
+            String hashText = hashUtil.getHash(extractedText);
+            SummaryFile summaryF = summaryRepo.findByFileHash(hashText);
+            if( summaryF!= null) {
+                System.out.println("retrieved from hash");
+                return new File(summaryF.getPath());
+            }
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://localhost:8000/summarize";
             HttpHeaders headers = new HttpHeaders();
@@ -81,7 +127,27 @@ public class FileServiceImpl implements FileService {
                 summaryText = (String) response.getBody().get("summary");
             }
             try{
-                return fileUtils.getResultantFile(summaryText);
+                File resultFile=fileUtils.getResultantFile(summaryText);
+                String currentDirectory = System.getProperty("user.dir");
+                String path = currentDirectory + "\\src\\main\\webapp\\results";
+                String fileName = hashText + ".pdf";
+
+                // Create the results directory if it doesn't exist
+                File folder = new File(path);
+                if (!folder.exists()) folder.mkdirs();
+
+                // Define the new destination file
+                File targetFile = new File(path + File.separator + fileName);
+
+                // Copy the file to the static directory with new name
+                Files.copy(resultFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                // Save info to DB
+                SummaryFile summaryFile = new SummaryFile();
+                summaryFile.setPath(targetFile.getAbsolutePath());
+                summaryFile.setFileHash(hashText);
+                summaryRepo.save(summaryFile);
+                return resultFile;
             }
             catch (IOException e){
                 return null;
@@ -90,7 +156,8 @@ public class FileServiceImpl implements FileService {
             throw new RuntimeException(e);
         }
     }
-
+    @Autowired
+    KeywordRepo keywordRepo;
     @Override
     public File getResultKeyWords(MultipartFile file) {
 
@@ -104,6 +171,12 @@ public class FileServiceImpl implements FileService {
         try {
             file.transferTo(pdfFile);
             String extractedText = fileUtils.extractTextFromPDF(pdfFile);
+            String hashText = hashUtil.getHash(extractedText);
+            KeywordFile keywordF = keywordRepo.findByFileHash(hashText);
+            if( keywordF!= null) {
+                System.out.println("retrieved from hash");
+                return new File(keywordF.getPath());
+            }
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://localhost:8000/keywords";
             HttpHeaders headers = new HttpHeaders();
@@ -128,7 +201,27 @@ public class FileServiceImpl implements FileService {
                 }
             }
             try{
-                return fileUtils.highlightRed(pdfFile,hashSet);
+                File resultFile=fileUtils.highlightRed(pdfFile,hashSet);
+                String currentDirectory = System.getProperty("user.dir");
+                String path = currentDirectory + "\\src\\main\\webapp\\results";
+                String fileName = hashText + ".pdf";
+
+                // Create the results directory if it doesn't exist
+                File folder = new File(path);
+                if (!folder.exists()) folder.mkdirs();
+
+                // Define the new destination file
+                File targetFile = new File(path + File.separator + fileName);
+
+                // Copy the file to the static directory with new name
+                Files.copy(resultFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                // Save info to DB
+                KeywordFile keywordFile = new KeywordFile();
+                keywordFile.setPath(targetFile.getAbsolutePath());
+                keywordFile.setFileHash(hashText);
+                keywordRepo.save(keywordFile);
+                return resultFile;
             }
             catch (IOException e){
                 System.out.println(e);
