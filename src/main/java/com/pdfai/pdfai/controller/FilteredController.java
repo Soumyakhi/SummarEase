@@ -1,18 +1,16 @@
 package com.pdfai.pdfai.controller;
 import com.pdfai.pdfai.dto.EditorDeltaJSON;
 import com.pdfai.pdfai.dto.FileDTO;
+import com.pdfai.pdfai.dto.SaveVersionDTO;
 import com.pdfai.pdfai.entity.TextContent;
-import com.pdfai.pdfai.service.AddEditor;
-import com.pdfai.pdfai.service.CollabService;
-import com.pdfai.pdfai.service.FileService;
-import com.pdfai.pdfai.service.LogoutService;
+import com.pdfai.pdfai.entity.VersionControl;
+import com.pdfai.pdfai.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 
 @CrossOrigin
 @RestController
@@ -57,5 +55,23 @@ public class FilteredController {
     public String setFullContent(@RequestBody EditorDeltaJSON editorDeltaJSON){
         collabService.addFullDoc(editorDeltaJSON);
         return "Success";
+    }
+    @Autowired
+    private VersionService versionService;
+    @PostMapping("/saveVersion")
+    public boolean setFullContent(@RequestBody SaveVersionDTO saveVersionDTO){
+        return versionService.save(saveVersionDTO);
+    }
+    @GetMapping("/fetchVersion/{verId}")
+    public ResponseEntity<?> fetchVer(@PathVariable String verId){
+        VersionControl versionObj=versionService.fetchVersionControl(Long.parseLong(verId));
+        if(versionObj==null){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(versionObj,HttpStatus.OK);
+    }
+    @GetMapping("/fetchAllVer/{editorId}")
+    public ResponseEntity<?> fetchAllVer(@PathVariable String editorId){
+        return new ResponseEntity<>(versionService.fetchAllVersions(editorId),HttpStatus.OK);
     }
 }
