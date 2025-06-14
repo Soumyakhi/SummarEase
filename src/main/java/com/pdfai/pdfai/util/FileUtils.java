@@ -27,7 +27,7 @@ public class FileUtils {
     public File getResultantFile(String text) throws IOException {
         File outputFile = new File(System.getProperty("java.io.tmpdir") + "/output.pdf");
         try (PDDocument document = new PDDocument()) {
-            InputStream fontStream = getClass().getClassLoader().getResourceAsStream("fonts/NotoSans-Bold.ttf");
+            InputStream fontStream = getClass().getClassLoader().getResourceAsStream("fonts/NotoSansSymbols2-Regular.ttf");
             if (fontStream == null) {
                 throw new RuntimeException("Font file not found in resources!");
             }
@@ -120,7 +120,7 @@ public class FileUtils {
         try (PDDocument document = Loader.loadPDF(pdfFile);
              PDDocument newDocument = new PDDocument()) {
 
-            InputStream fontStream = getClass().getClassLoader().getResourceAsStream("fonts/NotoSans-Bold.ttf");
+            InputStream fontStream = getClass().getClassLoader().getResourceAsStream("fonts/NotoSansSymbols2-Regular.ttf");
             if (fontStream == null) {
                 throw new RuntimeException("Font file not found in resources!");
             }

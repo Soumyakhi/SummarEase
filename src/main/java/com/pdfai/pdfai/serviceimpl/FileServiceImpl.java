@@ -28,6 +28,8 @@ public class FileServiceImpl implements FileService {
     FileUtils fileUtils;
     @Autowired
     HashUtil hashUtil;
+    private String path = "src/main/webapp/results/";
+
     @Override
     public File getResultGrammar(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -47,7 +49,7 @@ public class FileServiceImpl implements FileService {
                 return new File(grammarF.getPath());
             }
             RestTemplate restTemplate = new RestTemplate();
-            String url = "http://localhost:8000/grammar";
+            String url = "http://host.docker.internal:8000/grammar";
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             Map<String, String> requestBody = new HashMap<>();
@@ -63,8 +65,7 @@ public class FileServiceImpl implements FileService {
 
 
                 // Define target directory and filename
-                String currentDirectory = System.getProperty("user.dir");
-                String path = currentDirectory + "\\src\\main\\webapp\\results";
+                //String currentDirectory = System.getProperty("user.dir");
                 String fileName = hashText + ".pdf";
 
                 // Create the results directory if it doesn't exist
@@ -83,7 +84,7 @@ public class FileServiceImpl implements FileService {
                 grammarFile.setFileHash(hashText);
                 grammarRepo.save(grammarFile);
 
-                return resultFile;
+                return targetFile;
 
             }
             catch (IOException e){
@@ -115,7 +116,7 @@ public class FileServiceImpl implements FileService {
                 return new File(summaryF.getPath());
             }
             RestTemplate restTemplate = new RestTemplate();
-            String url = "http://localhost:8000/summarize";
+            String url = "http://host.docker.internal:8000/summarize";
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             Map<String, String> requestBody = new HashMap<>();
@@ -128,8 +129,6 @@ public class FileServiceImpl implements FileService {
             }
             try{
                 File resultFile=fileUtils.getResultantFile(summaryText);
-                String currentDirectory = System.getProperty("user.dir");
-                String path = currentDirectory + "\\src\\main\\webapp\\results";
                 String fileName = hashText + ".pdf";
 
                 // Create the results directory if it doesn't exist
@@ -147,7 +146,7 @@ public class FileServiceImpl implements FileService {
                 summaryFile.setPath(targetFile.getAbsolutePath());
                 summaryFile.setFileHash(hashText);
                 summaryRepo.save(summaryFile);
-                return resultFile;
+                return targetFile;
             }
             catch (IOException e){
                 return null;
@@ -178,7 +177,7 @@ public class FileServiceImpl implements FileService {
                 return new File(keywordF.getPath());
             }
             RestTemplate restTemplate = new RestTemplate();
-            String url = "http://localhost:8000/keywords";
+            String url = "http://host.docker.internal:8000/keywords";
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             Map<String, String> requestBody = new HashMap<>();
@@ -202,8 +201,6 @@ public class FileServiceImpl implements FileService {
             }
             try{
                 File resultFile=fileUtils.highlightRed(pdfFile,hashSet);
-                String currentDirectory = System.getProperty("user.dir");
-                String path = currentDirectory + "\\src\\main\\webapp\\results";
                 String fileName = hashText + ".pdf";
 
                 // Create the results directory if it doesn't exist
@@ -221,7 +218,7 @@ public class FileServiceImpl implements FileService {
                 keywordFile.setPath(targetFile.getAbsolutePath());
                 keywordFile.setFileHash(hashText);
                 keywordRepo.save(keywordFile);
-                return resultFile;
+                return targetFile;
             }
             catch (IOException e){
                 System.out.println(e);
